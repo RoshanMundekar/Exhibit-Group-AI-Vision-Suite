@@ -1,0 +1,21 @@
+# ── API framework ─────────────────────────────────────────────────────────────
+fastapi
+uvicorn[standard]
+python-multipart          # required for UploadFile / Form support
+httpx                     # async HTTP client for Ollama API calls
+
+# ── ML & image processing ─────────────────────────────────────────────────────
+pillow                    # PIL — image open/save/transform
+numpy                     # vector math for FAISS
+torch                     # BEiT inference
+transformers              # BeitImageProcessor + BeitModel
+
+# ── Similarity search ─────────────────────────────────────────────────────────
+faiss-cpu                 # swap for faiss-gpu if CUDA is available
+
+# ── Background removal ────────────────────────────────────────────────────────
+rembg                     # isnet-general-use model
+onnxruntime               # rembg runtime backend
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+python-dotenv             # .env loading

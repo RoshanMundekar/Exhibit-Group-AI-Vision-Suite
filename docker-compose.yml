@@ -1,0 +1,136 @@
+version: "3.9"
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Exhibit Group — AI Vision Suite
+#  docker compose up --build
+#
+#  Profiles:
+#    (default)          CPU-only API
+#    --profile ollama   + Ollama vision model sidecar
+#    --profile gpu      Enable NVIDIA GPU for API container
+#
+#  Quick start:
+#    CPU only              → docker compose up --build
+#    CPU + Ollama          → docker compose --profile ollama up --build
+#    GPU only              → docker compose --profile gpu up --build
+#    GPU + Ollama          → docker compose --profile gpu --profile ollama up --build
+# ══════════════════════════════════════════════════════════════════════════════
+
+services:
+
+  # ── Main FastAPI Application ───────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: exhibit_vision_api
+    restart: unless-stopped
+    ports:
+      - "8000:5000"        # host:container  →  visit http://localhost:8000
+    volumes:
+      # Persist source images (add your images here)
+      - ./static/images:/app/static/images
+      # Persist the FAISS index between restarts
+      - ./data_flat:/app/data_flat
+      # Persist application logs
+      - ./logs:/app/logs
+      # Persist BG-removed PNG cache
+      - ./static/preprocessed:/app/static/preprocessed
+      # Persist temporary query uploads
+      - ./static/upload:/app/static/upload
+    environment:
+      - PYTHONUNBUFFERED=1
+      # Point to Ollama sidecar when running with --profile ollama
+      # When Ollama is not running the app degrades gracefully (no captions)
+      - OLLAMA_HOST=http://ollama:11434
+    depends_on:
+      ollama:
+        condition: service_started
+        required: false      # API starts even without Ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s     # give time for model downloads on first run
+    # GPU support (active only with --profile gpu)
+    profiles: []
+    networks:
+      - vision_net
+
+  # ── GPU variant of the API (replaces the cpu service when --profile gpu) ───
+  api-gpu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: exhibit_vision_api_gpu
+    restart: unless-stopped
+    profiles: ["gpu"]
+    ports:
+      - "8000:5000"
+    volumes:
+      - ./static/images:/app/static/images
+      - ./data_flat:/app/data_flat
+      - ./logs:/app/logs
+      - ./static/preprocessed:/app/static/preprocessed
+      - ./static/upload:/app/static/upload
+    environment:
+      - PYTHONUNBUFFERED=1
+      - OLLAMA_HOST=http://ollama:11434
+    depends_on:
+      ollama:
+        condition: service_started
+        required: false
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - vision_net
+
+  # ── Ollama vision model sidecar (optional — activate with --profile ollama) 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: exhibit_ollama
+    restart: unless-stopped
+    profiles: ["ollama", "gpu"]
+    ports:
+      - "11434:11434"
+    volumes:
+      # Persist downloaded Ollama models between restarts
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
+    networks:
+      - vision_net
+    # Pull the moondream model inside the container on first boot
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        ollama serve &
+        sleep 5
+        ollama pull moondream
+        wait
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Named Volumes
+# ══════════════════════════════════════════════════════════════════════════════
+volumes:
+  ollama_data:
+    driver: local
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Networks
+# ══════════════════════════════════════════════════════════════════════════════
+networks:
+  vision_net:
+    driver: bridge
