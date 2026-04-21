@@ -1,17 +1,3 @@
-"""
-core/ollama_client.py — Async Ollama vision API client.
-
-Calls the locally-running Ollama server to generate an AI caption for an
-image. Gracefully degrades — if Ollama is offline, a fallback string is
-returned so the rest of the pipeline keeps working.
-
-Usage:
-    from core.ollama_client import get_caption, check_ollama_health
-
-    description = await get_caption(image_bytes)   # str
-    is_up       = await check_ollama_health()       # bool
-"""
-
 import base64
 import logging
 

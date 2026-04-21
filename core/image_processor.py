@@ -1,17 +1,3 @@
-"""
-core/image_processor.py — BEiT-based image feature extractor.
-
-Loads microsoft/beit-large-patch16-224 once at class construction time.
-For each image it:
-  1. Calls JewelryBackgroundRemover to strip the background (cached PNG).
-  2. Feeds the cleaned image through BEiT and returns the [CLS] pooler output
-     as a 1-D float32 numpy array (1024-d for beit-large).
-
-Usage:
-    processor = ImageProcessor()
-    vector = processor.extract_features("path/to/image.jpg")  # np.ndarray | None
-"""
-
 import os
 import logging
 from pathlib import Path

@@ -1,16 +1,3 @@
-"""
-core/bg_remover.py — Jewelry background removal utility.
-
-Uses the `rembg` library with the isnet-general-use model.
-Applies contrast + sharpness enhancement before removal so that
-jewelry detail is preserved against complex backgrounds.
-
-Usage:
-    remover = JewelryBackgroundRemover()
-    success = remover.remove_background("path/to/image.jpg")
-    # Output saved to static/preprocessed/<name>.png
-"""
-
 import os
 import logging
 from PIL import Image, ImageEnhance

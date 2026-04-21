@@ -1,19 +1,3 @@
-"""
-core/faiss_indexer.py — FAISS FlatIP index manager with auto-update thread.
-
-Maintains a single flat inner-product index over all images in *image_dir*.
-A background daemon thread watches the directory and incrementally indexes
-any newly added images without restarting the server.
-
-Usage:
-    indexer = FaissIndexer()                          # starts bg thread
-    results = indexer.search_similar("query.jpg", top_n=10)
-    # → [(image_path, similarity_score), ...]
-
-    progress = indexer.load_progress()
-    # → {"processed": int, "total": int, "remaining": int}
-"""
-
 import json
 import logging
 import multiprocessing
